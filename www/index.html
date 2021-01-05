@@ -1,0 +1,61 @@
+<!doctype html>
+<html class="no-js" lang="">
+    <head>
+        <meta charset="utf-8">
+        <meta http-equiv="x-ua-compatible" content="ie=edge">
+        <title>Visard</title>
+        <meta name="description" content="">
+        <meta name="viewport" content="width=device-width, initial-scale=1">
+
+        <link rel="apple-touch-icon" href="/apple-touch-icon.png">
+        <!-- Place favicon.ico in the root directory -->
+
+    </head>
+    <body>
+        <!--[if lt IE 8]>
+            <p class="browserupgrade">
+            You are using an <strong>outdated</strong> browser. Please
+            <a href="http://browsehappy.com/">upgrade your browser</a> to improve
+            your experience.
+            </p>
+        <![endif]-->
+
+        <canvas id="demo-canvas"></canvas>
+        <script type="module">
+         async function init() {
+             const { instance } = await WebAssembly.instantiateStreaming(
+                 fetch("./visard.wasm")
+             );
+
+             const width = 512;
+             const height = 512;
+
+             const canvas = document.getElementById("demo-canvas");
+             canvas.width = width;
+             canvas.height = height;
+
+             const buffer_address = instance.exports.BUFFER.value;
+             const image = new ImageData(
+                 new Uint8ClampedArray(
+                     instance.exports.memory.buffer,
+                     buffer_address,
+                     4 * width * height,
+                 ),
+                 width,
+             );
+
+             const ctx = canvas.getContext("2d");
+
+             const render = () => {
+                 instance.exports.go();
+                 ctx.putImageData(image, 0, 0);
+                 requestAnimationFrame(render);
+             };
+
+             render();
+         }
+
+         init();
+        </script>
+    </body>
+</html>
